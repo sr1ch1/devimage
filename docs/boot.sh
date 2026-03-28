@@ -14,7 +14,7 @@ detect_url() {
     local parent_cmd
     parent_cmd=$(ps -o command= $PPID 2>/dev/null || true)
 
-    # Look for GitHub Pages or raw URLs
+    # Accept ANY https://... URL (raw, github.io, CDN, etc.)
     echo "$parent_cmd" | grep -oE 'https://[^ ]+' || true
 }
 
@@ -22,8 +22,6 @@ SCRIPT_URL=$(detect_url)
 
 if [ -z "$SCRIPT_URL" ]; then
     echo "ERROR: Could not detect script URL."
-    echo "Please run via:"
-    echo "  curl -fsSL https://sr1ch1.github.io/devimage/boot.sh | sh"
     exit 1
 fi
 
@@ -31,33 +29,43 @@ echo "Detected script URL:"
 echo "  $SCRIPT_URL"
 echo
 
-# --- Extract GitHub username ---
+# --- Extract GitHub user + repo from ANY GitHub URL ---
+# Supported:
+#   https://raw.githubusercontent.com/<user>/<repo>/...
+#   https://<user>.github.io/<repo>/boot.sh
+
 if echo "$SCRIPT_URL" | grep -q 'raw.githubusercontent.com'; then
-    # https://raw.githubusercontent.com/<user>/<repo>/...
+    # raw.githubusercontent.com/<user>/<repo>/
     GITHUB_USER=$(echo "$SCRIPT_URL" | sed -n 's#.*raw.githubusercontent.com/\([^/]*\)/.*#\1#p')
+    GITHUB_REPO=$(echo "$SCRIPT_URL" | sed -n 's#.*raw.githubusercontent.com/[^/]*/\([^/]*\)/.*#\1#p')
 elif echo "$SCRIPT_URL" | grep -q 'github.io'; then
-    # https://<user>.github.io/<repo>/boot.sh
+    # <user>.github.io/<repo>/boot.sh
     GITHUB_USER=$(echo "$SCRIPT_URL" | sed -n 's#https://\([^\.]*\)\.github\.io/.*#\1#p')
+    GITHUB_REPO=$(echo "$SCRIPT_URL" | sed -n 's#https://[^/]*/\([^/]*\)/.*#\1#p')
 else
-    GITHUB_USER=""
+    echo "ERROR: Unsupported script URL format."
+    exit 1
 fi
 
-if [ -z "$GITHUB_USER" ]; then
-    echo "ERROR: Could not extract GitHub user from URL."
+if [ -z "$GITHUB_USER" ] || [ -z "$GITHUB_REPO" ]; then
+    echo "ERROR: Could not extract GitHub user or repo from URL."
     exit 1
 fi
 
 DOTFILES_REPO="${GITHUB_USER}/dotfiles"
 
 echo "Using GitHub user:   $GITHUB_USER"
+echo "Using devimage repo: $GITHUB_REPO"
 echo "Using dotfiles repo: $DOTFILES_REPO"
 echo
 
+# --- Build image directly from GitHub (no git needed) ---
 echo "Building devimage from GitHub..."
 podman build \
   -t devimage \
   --build-arg DOTFILES_REPO="${DOTFILES_REPO}" \
-  "https://github.com/${GITHUB_USER}/devimage.git"
+  "https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
 
+# --- Run container ---
 echo "Starting dev container..."
 podman run -it --name dev -e DOTFILES_REPO="${DOTFILES_REPO}" devimage
