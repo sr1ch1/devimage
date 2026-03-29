@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y keepassxc
+RUN apt-get update && apt-get install -y kpcli libterm-readline-gnu-perl
 
 # Install Neovim (latest stable)
 RUN set -eux; \
@@ -55,13 +55,8 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-echo -n "$KPPASS" | keepassxc-cli attachment-export \
-  -p - \
-  /tmp/bootstrap.kdbx \
-  "ssh/id_github" \
-  /tmp/id_github
-
-PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show -s -a Notes -p - /tmp/bootstrap.kdbx "ssh/id_github")
+echo "$KPPASS" | kpcli --kdb=/tmp/bootstrap.kdbx --command="export /ssh/id_github /tmp/id_github"
+PUBKEY=$(echo "$KPPASS" | kpcli --kdb=/tmp/bootstrap.kdbx --command="show -f /ssh/id_github" | grep Notes | cut -d: -f2-)
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
