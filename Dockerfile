@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM debian:12
 
 # Allow passing a GitHub repo in the form "user/repo"
 ARG DOTFILES_REPO
@@ -12,13 +12,7 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# install keepassxc
-RUN curl -LO https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-x86_64.AppImage \
-    && chmod +x KeePassXC-2.7.12-x86_64.AppImage \
-    && mv KeePassXC-2.7.12-x86_64.AppImage /usr/local/bin/keepassxc
-RUN ./keepassxc --appimage-extract \
-    && mv squashfs-root/usr/bin/keepassxc-cli /usr/local/bin/keepassxc-cli \
-    && chmod +x /usr/local/bin/keepassxc-cli
+RUN apt-get update && apt-get install -y keepassxc
 
 # Install Neovim (latest stable)
 RUN set -eux; \
