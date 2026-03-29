@@ -27,7 +27,7 @@ RUN set -eux; \
     rm nvim.tar.gz
 
 # Python support
-RUN pip3 install pynvim
+RUN pip3 install --break-system-packages pynvim
 
 # Install mise
 RUN curl -fsSL https://mise.run | sh
