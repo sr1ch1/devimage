@@ -12,7 +12,12 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y keepassxc
+# Install modern keepassxc-cli from GitHub releases
+RUN curl -L -o keepassxc-cli.deb \
+    https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/keepassxc-cli_2.7.12_amd64.deb \
+    && apt-get update \
+    && apt-get install -y ./keepassxc-cli.deb \
+    && rm keepassxc-cli.deb
 
 # Install Neovim (latest stable)
 RUN set -eux; \
@@ -55,17 +60,18 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-keepassxc --pw-stdin --export-attachment \
+echo -n "$KPPASS" | keepassxc-cli attachment-export \
+  -p - \
   /tmp/bootstrap.kdbx \
   "ssh/id_github" \
-  "id_github" \
-  /tmp/id_github <<< "$KPPASS"
+  /tmp/id_github
 
-PUBKEY=$(keepassxc --pw-stdin --show-entry \
+PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show \
+  -s \
+  -a Notes \
+  -p - \
   /tmp/bootstrap.kdbx \
-  "ssh/id_github" <<< "$KPPASS" \
-  | grep Notes \
-  | sed 's/Notes: //')
+  "ssh/id_github")
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
