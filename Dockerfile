@@ -12,7 +12,11 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y kpcli libterm-readline-gnu-perl
+RUN echo "deb http://deb.debian.org/debian trixie main" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y -t trixie keepassxc \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Neovim (latest stable)
 RUN set -eux; \
@@ -55,8 +59,18 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-echo "$KPPASS" | kpcli --kdb=/tmp/bootstrap.kdbx --command="export /ssh/id_github /tmp/id_github"
-PUBKEY=$(echo "$KPPASS" | kpcli --kdb=/tmp/bootstrap.kdbx --command="show -f /ssh/id_github" | grep Notes | cut -d: -f2-)
+echo -n "$KPPASS" | keepassxc-cli attachment-export \
+  -p - \
+  /tmp/bootstrap.kdbx \
+  "ssh/id_github" \
+  /tmp/id_github
+
+PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show \
+  -s \
+  -a Notes \
+  -p - \
+  /tmp/bootstrap.kdbx \
+  "ssh/id_github")
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
