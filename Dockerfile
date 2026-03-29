@@ -12,12 +12,16 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install modern keepassxc-cli from GitHub releases
-RUN curl -L -o keepassxc-cli.deb \
-    https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/keepassxc-cli_2.7.12_amd64.deb \
-    && apt-get update \
-    && apt-get install -y ./keepassxc-cli.deb \
-    && rm keepassxc-cli.deb
+# Build keepassxc from source (CLI only)
+RUN curl -L -o keepassxc.tar.gz \
+    https://github.com/keepassxreboot/keepassxc/archive/refs/tags/2.7.12.tar.gz \
+    && tar xf keepassxc.tar.gz \
+    && cd keepassxc-2.7.12 \
+    && cmake -DWITH_GUI=OFF -DWITH_XC_AUTOTYPE=OFF -DWITH_XC_BROWSER=OFF -DWITH_TESTS=OFF -DWITH_GUI_TESTS=OFF -DWITH_DEV_BUILD=OFF -DCMAKE_BUILD_TYPE=Release . \
+    && make -j$(nproc) \
+    && make install \
+    && cd .. \
+    && rm -rf keepassxc*
 
 # Install Neovim (latest stable)
 RUN set -eux; \
