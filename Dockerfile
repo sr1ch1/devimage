@@ -12,14 +12,14 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L -o keepassxc.appimage \
-    https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-x86_64.AppImage \
-    && chmod +x keepassxc.appimage
+RUN curl -L -o keepassxc.flatpak \
+    https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/org.keepassxc.KeePassXC.flatpak
 
-RUN ./keepassxc.appimage --appimage-extract \
-    && mv squashfs-root /opt/keepassxc \
-    && ln -s /opt/keepassxc/usr/bin/keepassxc-cli /usr/local/bin/keepassxc-cli \
-    && rm keepassxc.appimage
+RUN mkdir /opt/keepassxc \
+    && bsdtar -xf keepassxc.flatpak -C /opt/keepassxc \
+    && rm keepassxc.flatpak
+
+RUN ln -s /opt/keepassxc/files/bin/keepassxc-cli /usr/local/bin/keepassxc-cli
 
 # Install Neovim (latest stable)
 RUN set -eux; \
