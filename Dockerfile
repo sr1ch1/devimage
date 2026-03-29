@@ -12,15 +12,6 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L -o keepassxc.flatpak \
-    https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/org.keepassxc.KeePassXC.flatpak
-
-RUN mkdir /opt/keepassxc \
-    && bsdtar -xf keepassxc.flatpak -C /opt/keepassxc \
-    && rm keepassxc.flatpak
-
-RUN ln -s /opt/keepassxc/files/bin/keepassxc-cli /usr/local/bin/keepassxc-cli
-
 # Install Neovim (latest stable)
 RUN set -eux; \
     url=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest \
@@ -36,6 +27,8 @@ RUN set -eux; \
 
 # Python support
 RUN pip3 install --break-system-packages pynvim
+
+RUN pip3 install pykeepass
 
 # Install mise
 RUN curl -fsSL https://mise.run | sh
@@ -62,18 +55,32 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-echo -n "$KPPASS" | keepassxc-cli attachment-export \
-  -p - \
-  /tmp/bootstrap.kdbx \
-  "ssh/id_github" \
-  /tmp/id_github
+python3 <<EOF_EXTRACT
+from pykeepass import PyKeePass
+import sys
 
-PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show \
-  -s \
-  -a Notes \
-  -p - \
-  /tmp/bootstrap.kdbx \
-  "ssh/id_github")
+password = sys.stdin.read().strip()
+kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
+
+entry = kp.find_entries(path='ssh/id_github', first=True)
+attachment = entry.attachments[0]
+
+with open('/tmp/id_github', 'wb') as f:
+    f.write(attachment.data)
+EOF_EXTRACT
+
+
+PUBKEY=$(python3 <<EOF_EXTRACT
+from pykeepass import PyKeePass
+import sys
+
+password = sys.stdin.read().strip()
+kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
+
+entry = kp.find_entries(path='ssh/id_github', first=True)
+print(entry.notes)
+EOF_EXTRACT
+)
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
