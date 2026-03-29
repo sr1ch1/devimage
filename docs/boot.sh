@@ -3,6 +3,7 @@ set -e
 
 # --- Detect the URL used to fetch this script (works even with curl | sh) ---
 detect_url() {
+    # Case 1: Script executed directly (rare)
     case "$0" in
         http*|https*)
             echo "$0"
@@ -10,11 +11,11 @@ detect_url() {
             ;;
     esac
 
-    # curl | sh → extract URL from parent process
+    # Case 2: curl | sh → extract URL from parent process
     local parent_cmd
     parent_cmd=$(ps -o command= $PPID 2>/dev/null || true)
 
-    # Accept ANY https://... URL (raw, github.io, CDN, etc.)
+    # Accept ANY https://... URL
     echo "$parent_cmd" | grep -oE 'https://[^ ]+' || true
 }
 
@@ -29,17 +30,10 @@ echo "Detected script URL:"
 echo "  $SCRIPT_URL"
 echo
 
-# --- Extract GitHub user + repo from ANY GitHub URL ---
-# Supported:
-#   https://raw.githubusercontent.com/<user>/<repo>/...
-#   https://<user>.github.io/<repo>/boot.sh
+# --- Extract GitHub user + repo from GitHub Pages URL ---
+# Format: https://<user>.github.io/<repo>/boot.sh
 
-if echo "$SCRIPT_URL" | grep -q 'raw.githubusercontent.com'; then
-    # raw.githubusercontent.com/<user>/<repo>/
-    GITHUB_USER=$(echo "$SCRIPT_URL" | sed -n 's#.*raw.githubusercontent.com/\([^/]*\)/.*#\1#p')
-    GITHUB_REPO=$(echo "$SCRIPT_URL" | sed -n 's#.*raw.githubusercontent.com/[^/]*/\([^/]*\)/.*#\1#p')
-elif echo "$SCRIPT_URL" | grep -q 'github.io'; then
-    # <user>.github.io/<repo>/boot.sh
+if echo "$SCRIPT_URL" | grep -q 'github.io'; then
     GITHUB_USER=$(echo "$SCRIPT_URL" | sed -n 's#https://\([^\.]*\)\.github\.io/.*#\1#p')
     GITHUB_REPO=$(echo "$SCRIPT_URL" | sed -n 's#https://[^/]*/\([^/]*\)/.*#\1#p')
 else
