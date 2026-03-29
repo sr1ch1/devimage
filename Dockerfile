@@ -28,8 +28,7 @@ RUN set -eux; \
 # Python support
 RUN pip3 install --break-system-packages pynvim
 
-RUN apt-get update && apt-get install -y pipx \
-    && pipx install kdbx
+RUN apt-get update && apt-get install -y python3-kdbx
 
 # Install mise
 RUN curl -fsSL https://mise.run | sh
@@ -56,17 +55,32 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-/root/.local/bin/kdbx extract-attachment \
-  --password "$KPPASS" \
-  /tmp/bootstrap.kdbx \
-  "ssh/id_github" \
-  /tmp/id_github
+python3 <<EOF_EXTRACT
+from kdbx import KDBX
+import sys
 
-PUBKEY=$(/root/.local/bin/kdbx show-entry \
-  --password "$KPPASS" \
-  --field Notes \
-  /tmp/bootstrap.kdbx \
-  "ssh/id_github")
+password = sys.stdin.read().strip()
+
+db = KDBX.load('/tmp/bootstrap.kdbx', password=password)
+entry = db.find('ssh/id_github')
+
+attachment = entry.attachments[0]
+with open('/tmp/id_github', 'wb') as f:
+    f.write(attachment.data)
+EOF_EXTRACT
+
+PUBKEY=$(python3 <<EOF_EXTRACT
+from kdbx import KDBX
+import sys
+
+password = sys.stdin.read().strip()
+
+db = KDBX.load('/tmp/bootstrap.kdbx', password=password)
+entry = db.find('ssh/id_github')
+
+print(entry.notes)
+EOF_EXTRACT
+)
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
