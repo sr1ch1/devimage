@@ -14,11 +14,14 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Neovim (latest stable)
-RUN curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz \
-    && tar xzf nvim-linux64.tar.gz \
-    && mv nvim-linux64 /opt/nvim \
-    && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
-    && rm nvim-linux64.tar.gz
+RUN curl -fL \
+    -H "Accept: application/octet-stream" \
+    -o nvim-linux64.tar.gz \
+    https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz \
+  && tar xzf nvim-linux64.tar.gz \
+  && mv nvim-linux64 /opt/nvim \
+  && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
+  && rm nvim-linux64.tar.gz
 
 # Python support
 RUN pip3 install pynvim
