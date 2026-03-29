@@ -9,9 +9,13 @@ RUN apt-get update && apt-get install -y \
     curl git unzip build-essential cmake \
     ripgrep fd-find python3 python3-pip tmux \
     libssl-dev zlib1g-dev libreadline-dev libffi-dev \
-    keepassxc \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# install keepassxc
+RUN curl -LO https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-x86_64.AppImage \
+    && chmod +x KeePassXC-2.7.12-x86_64.AppImage \
+    && mv KeePassXC-2.7.12-x86_64.AppImage /usr/local/bin/keepassxc
 
 # Install Neovim (latest stable)
 RUN set -eux; \
