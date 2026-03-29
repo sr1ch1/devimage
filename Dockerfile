@@ -71,13 +71,13 @@ mv /tmp/id_github ~/.ssh/id_github
 chmod 600 ~/.ssh/id_github ~/.ssh/id_github.pub
 
 # --- write SSH config ---
-cat > ~/.ssh/config <<EOF
+cat > ~/.ssh/config << 'EOF_SSHCONFIG'
 Host github.com
     HostName github.com
     User git
     IdentityFile ~/.ssh/id_github
     IdentitiesOnly yes
-EOF
+EOF_SSHCONFIG
 
 chmod 600 ~/.ssh/config
 
