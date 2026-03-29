@@ -12,8 +12,12 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN echo "deb http://deb.debian.org/debian trixie main" >> /etc/apt/sources.list \
-    && apt-get update \
+# Trixie Repo hinzufügen
+RUN echo "deb http://deb.debian.org/debian trixie main" >> /etc/apt/sources.list
+
+# Alte Version entfernen, neue erzwingen
+RUN apt-get update \
+    && apt-get remove -y keepassxc \
     && apt-get install -y -t trixie keepassxc \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
