@@ -12,15 +12,7 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/fdfind /usr/local/bin/fd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Trixie Repo hinzufügen
-RUN echo "deb http://deb.debian.org/debian trixie main" >> /etc/apt/sources.list
-
-# Alte Version entfernen, neue erzwingen
-RUN apt-get update \
-    && apt-get remove -y keepassxc \
-    && apt-get install -y -t trixie keepassxc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y keepassxc
 
 # Install Neovim (latest stable)
 RUN set -eux; \
@@ -63,18 +55,17 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-echo -n "$KPPASS" | keepassxc-cli attachment-export \
-  -p - \
+keepassxc --pw-stdin --export-attachment \
   /tmp/bootstrap.kdbx \
   "ssh/id_github" \
-  /tmp/id_github
+  "id_github" \
+  /tmp/id_github <<< "$KPPASS"
 
-PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show \
-  -s \
-  -a Notes \
-  -p - \
+PUBKEY=$(keepassxc --pw-stdin --show-entry \
   /tmp/bootstrap.kdbx \
-  "ssh/id_github")
+  "ssh/id_github" <<< "$KPPASS" \
+  | grep Notes \
+  | sed 's/Notes: //')
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
