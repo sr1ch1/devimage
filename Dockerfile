@@ -39,7 +39,7 @@ ENV PATH="/root/.local/bin:${PATH}"
 RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
 # Create entrypoint.sh inline
-RUN cat << 'EOF' > /usr/local/bin/entrypoint.sh
+RUN cat << 'EOF_ENTRYPOINT' > /usr/local/bin/entrypoint.sh
 #!/bin/bash
 set -e
 
@@ -120,7 +120,7 @@ fi
 
 # Otherwise create a new session running nvim
 exec tmux new -s dev "nvim"
-EOF
+EOF_ENTRYPOINT
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
