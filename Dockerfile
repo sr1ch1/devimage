@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 RUN curl -LO https://github.com/keepassxreboot/keepassxc/releases/download/2.7.12/KeePassXC-2.7.12-x86_64.AppImage \
     && chmod +x KeePassXC-2.7.12-x86_64.AppImage \
     && mv KeePassXC-2.7.12-x86_64.AppImage /usr/local/bin/keepassxc
+RUN ./keepassxc --appimage-extract \
+    && mv squashfs-root/usr/bin/keepassxc-cli /usr/local/bin/keepassxc-cli \
+    && chmod +x /usr/local/bin/keepassxc-cli
 
 # Install Neovim (latest stable)
 RUN set -eux; \
