@@ -43,6 +43,48 @@ RUN cat << 'EOF' > /usr/local/bin/entrypoint.sh
 #!/bin/bash
 set -e
 
+GITHUB_USER="${DOTFILES_REPO%%/*}"
+
+curl -fsSL \
+  "https://github.com/${GITHUB_USER}/devimage/raw/refs/heads/main/bootstrap.kdbx" \
+  -o /tmp/bootstrap.kdbx
+
+# --- ask for password ---
+echo -n "KeePass password: "
+read -s KPPASS
+echo
+
+keepassxc-cli attachment-export \
+  -p "$KPPASS" \
+  /tmp/bootstrap.kdbx \
+  "ssh/id_github" \
+  /tmp/id_github
+
+PUBKEY=$(keepassxc-cli show -s -a Notes -p "$KPPASS" /tmp/bootstrap.kdbx "ssh/id_github")
+
+# --- write SSH files ---
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+
+echo "$PUBKEY" > ~/.ssh/id_github.pub
+mv /tmp/id_github ~/.ssh/id_github
+chmod 600 ~/.ssh/id_github ~/.ssh/id_github.pub
+
+# --- write SSH config ---
+cat > ~/.ssh/config <<EOF
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_github
+    IdentitiesOnly yes
+EOF
+
+chmod 600 ~/.ssh/config
+
+# --- start ssh-agent ---
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_github
+
 # DOTFILES_REPO must be provided as "user/repo"
 if [ -z "$DOTFILES_REPO" ]; then
     echo "ERROR: DOTFILES_REPO was not provided."
