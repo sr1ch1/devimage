@@ -54,13 +54,13 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-keepassxc-cli attachment-export \
-  -p "$KPPASS" \
+echo -n "$KPPASS" | keepassxc-cli attachment-export \
+  -p - \
   /tmp/bootstrap.kdbx \
   "ssh/id_github" \
   /tmp/id_github
 
-PUBKEY=$(keepassxc-cli show -s -a Notes -p "$KPPASS" /tmp/bootstrap.kdbx "ssh/id_github")
+PUBKEY=$(echo -n "$KPPASS" | keepassxc-cli show -s -a Notes -p - /tmp/bootstrap.kdbx "ssh/id_github")
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
