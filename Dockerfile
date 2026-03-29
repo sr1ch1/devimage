@@ -27,8 +27,9 @@ RUN set -eux; \
 
 # Python support
 RUN pip3 install --break-system-packages pynvim
-
-RUN pip3 install pykeepass
+RUN apt-get update && apt-get install -y python3-venv
+RUN python3 -m venv /opt/py \
+    && /opt/py/bin/pip install pykeepass
 
 # Install mise
 RUN curl -fsSL https://mise.run | sh
