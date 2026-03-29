@@ -28,7 +28,10 @@ RUN set -eux; \
 # Python support
 RUN pip3 install --break-system-packages pynvim
 
-RUN apt-get update && apt-get install -y python3-kdbx
+RUN apt-get update && apt-get install -y python3-venv
+
+RUN python3 -m venv /opt/py \
+    && /opt/py/bin/pip install pykeepass
 
 # Install mise
 RUN curl -fsSL https://mise.run | sh
@@ -55,32 +58,33 @@ echo -n "KeePass password: "
 read -s KPPASS
 echo
 
-python3 <<EOF_EXTRACT
-from kdbx import KDBX
+/opt/py/bin/python3 <<EOF_EXTRACT
+from pykeepass import PyKeePass
 import sys
 
 password = sys.stdin.read().strip()
+kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
 
-db = KDBX.load('/tmp/bootstrap.kdbx', password=password)
-entry = db.find('ssh/id_github')
-
+entry = kp.find_entries(path='ssh/id_github', first=True)
 attachment = entry.attachments[0]
+
 with open('/tmp/id_github', 'wb') as f:
     f.write(attachment.data)
 EOF_EXTRACT
 
-PUBKEY=$(python3 <<EOF_EXTRACT
-from kdbx import KDBX
+PUBKEY=$(/opt/py/bin/python3 <<EOF_EXTRACT
+from pykeepass import PyKeePass
 import sys
 
 password = sys.stdin.read().strip()
+kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
 
-db = KDBX.load('/tmp/bootstrap.kdbx', password=password)
-entry = db.find('ssh/id_github')
-
+entry = kp.find_entries(path='ssh/id_github', first=True)
 print(entry.notes)
 EOF_EXTRACT
 )
+
+
 
 # --- write SSH files ---
 mkdir -p ~/.ssh
