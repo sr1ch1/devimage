@@ -1,151 +1,125 @@
-FROM debian:12
+# ---------------------------------------------------------
+# Ubuntu Development Environment
+# ---------------------------------------------------------
+FROM ubuntu:24.04
 
-# Allow passing a GitHub repo in the form "user/repo"
-ARG DOTFILES_REPO
-ENV DOTFILES_REPO="${DOTFILES_REPO}"
+ARG GITHUB_USER
+ENV GITHUB_USER="${GITHUB_USER}"
 
-# Basic tools for Neovim + building runtimes via mise
-RUN apt-get update && apt-get install -y \
-    curl git unzip build-essential cmake \
-    ripgrep fd-find python3 python3-pip tmux \
-    libssl-dev zlib1g-dev libreadline-dev libffi-dev \
-    && ln -s /usr/bin/fdfind /usr/local/bin/fd \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# basic dev tools and the latest version of keepassxc
+RUN apt-get update && \
+    apt-get install -y \
+        software-properties-common \
+        curl git unzip build-essential cmake \
+        ripgrep fd-find python3 python3-pip tmux \
+        libssl-dev zlib1g-dev libreadline-dev libffi-dev && \
+    add-apt-repository -y ppa:phoerious/keepassxc && \
+    apt-get update && \
+    apt-get install -y keepassxc && \
+    ln -s /usr/bin/fdfind /usr/local/bin/fd && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Neovim (latest stable)
-RUN set -eux; \
-    url=$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest \
-      | grep browser_download_url \
-      | grep 'nvim-linux-x86_64.tar.gz' \
-      | sed -E 's/.*"([^"]+)".*/\1/'); \
-    echo "Downloading: $url"; \
-    curl -fL -o nvim.tar.gz "$url"; \
-    tar xzf nvim.tar.gz; \
-    mv nvim-linux-* /opt/nvim; \
-    ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim; \
-    rm nvim.tar.gz
-
-# Python support
-RUN pip3 install --break-system-packages pynvim
-
-RUN apt-get update && apt-get install -y python3-venv
-
-RUN python3 -m venv /opt/py \
-    && /opt/py/bin/pip install pykeepass
-
-# Install mise
-RUN curl -fsSL https://mise.run | sh
-
-# Add mise to PATH
-ENV PATH="/root/.local/bin:${PATH}"
+RUN curl -LO https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz \
+    && tar xzf nvim-linux-x86_64.tar.gz \
+    && mv nvim-linux-x86_64 /opt/nvim \
+    && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
+    && rm nvim-linux-x86_64.tar.gz
 
 # Install chezmoi
 RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 
+# ---------------------------------------------------------
+# Create a non-root user for development
+# ---------------------------------------------------------
+ARG GITHUB_USER
+ENV GITHUB_USER="${GITHUB_USER}"
+
+RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) \
+    && useradd -m -s /bin/bash "$GITHUB_USER" \
+    && echo "$GITHUB_USER ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER $GITHUB_USER
+ENV HOME=/home/$GITHUB_USER
+WORKDIR $HOME
+
+# Install mise
+ENV PATH="/home/${GITHUB_USER}/.local/bin:${PATH}"
+RUN curl -fsSL https://mise.run | sh \
+    && echo 'export PATH="$HOME/.local/bin:$PATH"' >> $HOME/.bashrc
+
+# Add mise to PATH
+ENV PATH="/root/.local/bin:${PATH}"
+
+# ---------------------------------------------------------
 # Create entrypoint.sh inline
+# ---------------------------------------------------------
+USER root
 RUN cat << 'EOF_ENTRYPOINT' > /usr/local/bin/entrypoint.sh
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-GITHUB_USER="${DOTFILES_REPO%%/*}"
-
-curl -fsSL \
-  "https://github.com/${GITHUB_USER}/devimage/raw/refs/heads/main/bootstrap.kdbx" \
-  -o /tmp/bootstrap.kdbx
-
-# --- ask for password ---
-echo -n "KeePass password: "
-read -s KPPASS
-echo
-
-/opt/py/bin/python3 <<EOF_EXTRACT
-from pykeepass import PyKeePass
-import sys
-
-password = sys.stdin.read().strip()
-kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
-
-entry = kp.find_entries(path='ssh/id_github', first=True)
-attachment = entry.attachments[0]
-
-with open('/tmp/id_github', 'wb') as f:
-    f.write(attachment.data)
-EOF_EXTRACT
-
-PUBKEY=$(/opt/py/bin/python3 <<EOF_EXTRACT
-from pykeepass import PyKeePass
-import sys
-
-password = sys.stdin.read().strip()
-kp = PyKeePass('/tmp/bootstrap.kdbx', password=password)
-
-entry = kp.find_entries(path='ssh/id_github', first=True)
-print(entry.notes)
-EOF_EXTRACT
-)
-
-
-
-# --- write SSH files ---
 mkdir -p ~/.ssh
-chmod 700 ~/.ssh
 
-echo "$PUBKEY" > ~/.ssh/id_github.pub
-mv /tmp/id_github ~/.ssh/id_github
-chmod 600 ~/.ssh/id_github ~/.ssh/id_github.pub
-
-# --- write SSH config ---
-cat > ~/.ssh/config << 'EOF_SSHCONFIG'
+cat << 'EOF_SSHCONFIG' > ~/.ssh/config
 Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_github
-    IdentitiesOnly yes
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_github
 EOF_SSHCONFIG
 
-chmod 600 ~/.ssh/config
+curl -fsSL \
+  "https://raw.githubusercontent.com/${GITHUB_USER}/devimage/main/bootstrap.kdbx" \
+  -o bootstrap.kdbx
 
-# --- start ssh-agent ---
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_github
+read -s -p "Password: " PW < /dev/tty
+printf '%s\n' "$PW" | keepassxc-cli show -q -a Notes -s bootstrap.kdbx "ssh/id_github" > ~/.ssh/id_github.pub
 
-# DOTFILES_REPO must be provided as "user/repo"
-if [ -z "$DOTFILES_REPO" ]; then
-    echo "ERROR: DOTFILES_REPO was not provided."
-    echo "Please pass it as:"
-    echo "  podman run -e DOTFILES_REPO=user/repo devimage"
-    exit 1
-fi
+printf '%s\n' "$PW" \
+  | keepassxc-cli attachment-export bootstrap.kdbx "ssh/id_github" id_github ~/.ssh/id_github
 
-# Convert "user/repo" → full GitHub URL
-REPO_URL="https://github.com/${DOTFILES_REPO}"
+chmod 600 ~/.ssh/id_github.pub
+chmod 600 ~/.ssh/id_github
 
+git_email="$(
+  printf '%s\n' "$PW" \
+    | keepassxc-cli show -q -a UserName -s bootstrap.kdbx "git/email"
+)"
+
+git_name="$(
+  printf '%s\n' "$PW" \
+    | keepassxc-cli show -q -a UserName -s bootstrap.kdbx "git/name"
+)"
+
+mkdir -p ~/.local/share/keepass
+mv bootstrap.kdbx ~/.local/share/keepass
+
+git config --global user.email "$git_email"
+git config --global user.name "$git_name"
+git config --global --add safe.directory '*'
+ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+REPO_URL="git@github.com:${GITHUB_USER}/dotfiles.git"
 echo "Using dotfiles repo: $REPO_URL"
 
-# 1. initialize chezmoi if not done already
-if [ ! -d "/root/.local/share/chezmoi" ]; then
+# initialize chezmoi if not done already
+if [ ! -d "~/.local/share/chezmoi" ]; then
     echo "Initializing chezmoi from ${REPO_URL}..."
     chezmoi init "${REPO_URL}"
 fi
 
-# 2. apply configuration including run_once scripts
+# apply configuration including run_once scripts
 echo "Applying chezmoi configuration..."
-chezmoi apply --verbose
+chezmoi apply
 
-# If inside tmux already, just run nvim
-if [ -n "$TMUX" ]; then
-    exec nvim "$@"
-fi
-
-# If a tmux session exists, attach to it
-if tmux has-session -t dev 2>/dev/null; then
-    exec tmux attach -t dev
-fi
-
-# Otherwise create a new session running nvim
-exec tmux new -s dev "nvim"
+bash
 EOF_ENTRYPOINT
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-CMD ["/usr/local/bin/entrypoint.sh"]
+USER $GITHUB_USER
+WORKDIR /home/$GITHUB_USER/workspace
+
+# Default command
+CMD [ "/usr/local/bin/entrypoint.sh" ]
