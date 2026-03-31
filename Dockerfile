@@ -13,9 +13,12 @@ ENV GITHUB_USER="${GITHUB_USER}"
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         software-properties-common \
+        wget gnupg gnupg-agent dirmngr \
         curl git unzip build-essential cmake \
-        python3 python3-pip sqlite3 tmux \
+        python3 python3-pip sqlite3 tmux kitty openssh-client \
         libssl-dev zlib1g-dev libreadline-dev libffi-dev \
+        libyaml-dev libgdbm-dev libgdbm-compat-dev \
+        libncurses5-dev pkg-config python3.12-venv \
         fish php ghostscript texlive-latex-base imagemagick locales && \
     sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \
@@ -52,12 +55,11 @@ ENV HOME=/home/${GITHUB_USER}
 RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     useradd -m -s /bin/bash "$GITHUB_USER" && \
     mkdir -p "/home/$GITHUB_USER/workspace" && \
-    chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER" && \
-    echo "$GITHUB_USER ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/$GITHUB_USER"
+    chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
 
 USER ${GITHUB_USER}
 WORKDIR /home/${GITHUB_USER}/workspace
+ENV PATH="${HOME}/.local/bin:${PATH}"
 
 # Default command
 CMD [ "/usr/local/bin/startup.sh" ]
-
