@@ -17,7 +17,7 @@ RUN apt-get update && \
         python3 python3-pip sqlite3 tmux \
         libssl-dev zlib1g-dev libreadline-dev libffi-dev \
         fish php ghostscript texlive-latex-base imagemagick locales && \
-    sed -i 's/^# *`$$de_DE.UTF-8 UTF-8$$`/\1/' /etc/locale.gen && \
+    sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \
     update-locale LANG=de_DE.UTF-8 LANGUAGE=de_DE:de LC_ALL=de_DE.UTF-8 && \
     add-apt-repository -y ppa:phoerious/keepassxc && \
