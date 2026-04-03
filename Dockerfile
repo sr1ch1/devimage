@@ -18,7 +18,7 @@ RUN apt-get update && \
     # --- base tools and system ---
     software-properties-common \
     wget gnupg gnupg-agent dirmngr \
-    curl git unzip locales \
+    curl git unzip file locales \
     openssh-client sqlite3 \
     # --- build essentials (for mise/php/treesitter) ---
     build-essential \
@@ -97,11 +97,11 @@ ENV HOME=/home/${GITHUB_USER}
 
 RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     useradd -m -s /bin/bash "$GITHUB_USER" && \
-    mkdir -p "/home/$GITHUB_USER/workspace" && \
+    mkdir -p "/home/$GITHUB_USER/projects" && \
     chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
 
 USER ${GITHUB_USER}
-WORKDIR /home/${GITHUB_USER}/workspace
+WORKDIR /home/${GITHUB_USER}/projects
 ENV PATH="${HOME}/.local/bin:${PATH}"
 
 # Default command

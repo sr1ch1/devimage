@@ -8,30 +8,12 @@ cd devimage
 # ---------------------------------------------------------
 # get password from user
 # ---------------------------------------------------------
-while true; do
-    # get password from user
-    read -s -p "Password: " PW < /dev/tty
-    echo
-
-    if [[ -z "$PW" ]]; then
-        echo "No password entered – aborting"
-        exit 1
-    fi
-
-    # Test password (with 'ls')
-    if printf '%s\n' "$PW" | keepassxc-cli ls bootstrap.kdbx dir >/dev/null 2>&1; then
-        echo "Password OK"
-        break
-    else
-        echo "Wrong password – try again"
-    fi
-done
 
 # ---------------------------------------------------------
 # Extract folders from keepass db
 # ---------------------------------------------------------
-  DIRS=$(printf '%s\n' "$PW" \
-    | keepassxc-cli ls bootstrap.kdbx dir)
+DIRS=$(printf '%s\n' "$PW" |
+  keepassxc-cli ls bootstrap.kdbx dir)
 
 while IFS= read -r item; do
 
@@ -39,20 +21,20 @@ while IFS= read -r item; do
   printf '%s\n' "$path"
   mkdir -p -- "$path"
 
-  printf '%s\n' "$PW" \
-    | keepassxc-cli attachment-export bootstrap.kdbx "dir/$item" data.tar.gz data.tar.gz
+  printf '%s\n' "$PW" |
+    keepassxc-cli attachment-export bootstrap.kdbx "dir/$item" data.tar.gz data.tar.gz
   tar -xzf data.tar.gz -C $path
   rm data.tar.gz
-done <<< "$DIRS"
+done <<<"$DIRS"
 
 # add github to known hosts
-ssh-keyscan github.com >> ~/.ssh/known_hosts
+ssh-keyscan github.com >>~/.ssh/known_hosts
 
 # ---------------------------------------------------------
 # install and activate mise
 # ---------------------------------------------------------
 curl -fsSL https://mise.run | sh
-echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+echo 'eval "$(mise activate bash)"' >>~/.bashrc
 eval "$(mise activate bash)"
 mise install
 
@@ -82,7 +64,8 @@ mise use -g github:tectonic-typesetting/tectonic
 mise use -g npm:@mermaid-js/mermaid-cli
 
 eval "$(mise activate bash)"
-mise use -g npm:neovim
+
+npm install -g neovim
 mise use -g gem:neovim
 mise exec python@latest -- pip install pynvim
 

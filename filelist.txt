@@ -1,0 +1,4 @@
+~/.gitconfig
+~/.ssh
+~/.config/mise/config.toml
+~/.config/nvim/lua/config/options.lua
