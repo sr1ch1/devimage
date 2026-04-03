@@ -56,6 +56,8 @@ echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 eval "$(mise activate bash)"
 mise install
 
+mise use -g neovim@0.11.5
+
 # install language and package managers
 mise use -g go@latest
 mise use -g node@latest
@@ -68,7 +70,6 @@ mise use -g java@latest
 mise use -g julia@latest
 mise use -g dotnet@latest
 mise use -g php@8.4
-mise use -g composer@latest
 
 # install productivity tools
 mise use -g fzf@latest
@@ -83,6 +84,8 @@ mise use --global npm:neovim
 mise use --global gem:neovim
 mise exec python@latest -- pip install pynvim
 
+eval "$(mise activate bash)"
+curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/bin --filename=composer
 mise reshim
 
 # ---------------------------------------------------------
