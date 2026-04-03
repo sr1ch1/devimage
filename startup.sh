@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 
-# ---------------------------------------------------------
-# get password from user
-# ---------------------------------------------------------
-read -s -p "Password: " PW < /dev/tty
-
-if [[ -z "$PWD" ]]; then
-    echo "no password entered - aborting"
-    exit 1
-fi
-
 # fetch users devmage repository
 GITHUB_USER=$(whoami)
 git clone https://github.com/$GITHUB_USER/devimage.git
 cd devimage
+
+# ---------------------------------------------------------
+# get password from user
+# ---------------------------------------------------------
+while true; do
+    # get password from user
+    read -s -p "Password: " PW < /dev/tty
+    echo
+
+    if [[ -z "$PW" ]]; then
+        echo "No password entered – aborting"
+        exit 1
+    fi
+
+    # Test password (with 'ls')
+    if keepassxc-cli ls bootstrap.kdbx -p "$PW" >/dev/null 2>&1; then
+        echo "Password OK"
+        break
+    else
+        echo "Wrong password – try again"
+    fi
+done
 
 # ---------------------------------------------------------
 # Extract folders from keepass db
@@ -43,7 +55,6 @@ curl -fsSL https://mise.run | sh
 echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 eval "$(mise activate bash)"
 mise install
-mise reshim
 
 # install language and package managers
 mise use -g go@latest
@@ -56,8 +67,8 @@ mise use -g ruby@latest
 mise use -g java@latest
 mise use -g julia@latest
 mise use -g dotnet@latest
-mise use -g php@latest
-mise use -g composer@latest
+mise use -g php@8.4
+mise use -g github:composer/composer
 
 # install productivity tools
 mise use -g fzf@latest
@@ -71,6 +82,8 @@ mise use --global npm:@mermaid-js/mermaid-cli
 mise use --global npm:neovim
 mise use --global gem:neovim
 mise exec python@latest -- pip install pynvim
+
+mise reshim
 
 # ---------------------------------------------------------
 # Install lazyvim
