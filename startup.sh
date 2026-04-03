@@ -19,7 +19,7 @@ while true; do
     fi
 
     # Test password (with 'ls')
-    if printf '%s\n' "$PW" | keepassxc-cli ls bootstrap.kdbx / >/dev/null 2>&1; then
+    if printf '%s\n' "$PW" | keepassxc-cli ls -q bootstrap.kdbx >/dev/null 2>&1; then
         echo "Password OK"
         break
     else
