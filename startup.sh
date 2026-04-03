@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+echo '-----------'
+ls
+
+cat startup.sh
+echo '-----------'
 # fetch users devmage repository
 GITHUB_USER=$(whoami)
 git clone https://github.com/$GITHUB_USER/devimage.git
