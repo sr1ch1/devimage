@@ -49,5 +49,6 @@ fi
 # Clean up
 echo "Cleaning up temporary files..."
 rm -rf "$RESTORE_TEMP"
+rm home.tar.gz
 
 echo "Done!"
