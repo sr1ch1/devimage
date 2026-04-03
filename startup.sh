@@ -6,29 +6,9 @@ git clone https://github.com/$GITHUB_USER/devimage.git
 cd devimage
 
 # ---------------------------------------------------------
-# get password from user
+# dehydrate user config
 # ---------------------------------------------------------
-
-# ---------------------------------------------------------
-# Extract folders from keepass db
-# ---------------------------------------------------------
-DIRS=$(printf '%s\n' "$PW" |
-  keepassxc-cli ls bootstrap.kdbx dir)
-
-while IFS= read -r item; do
-
-  path="${item/#\~/$HOME}"
-  printf '%s\n' "$path"
-  mkdir -p -- "$path"
-
-  printf '%s\n' "$PW" |
-    keepassxc-cli attachment-export bootstrap.kdbx "dir/$item" data.tar.gz data.tar.gz
-  tar -xzf data.tar.gz -C $path
-  rm data.tar.gz
-done <<<"$DIRS"
-
-# add github to known hosts
-ssh-keyscan github.com >>~/.ssh/known_hosts
+$(./dehydrate.sh)
 
 # ---------------------------------------------------------
 # install and activate mise
