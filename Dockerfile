@@ -15,10 +15,10 @@ RUN apt-get update && \
         software-properties-common \
         wget gnupg gnupg-agent dirmngr \
         curl git unzip build-essential cmake \
-        python3 python3-pip sqlite3 tmux kitty openssh-client \
+        sqlite3 libsqlite3-dev kitty openssh-client \
         libssl-dev zlib1g-dev libreadline-dev libffi-dev \
         libyaml-dev libgdbm-dev libgdbm-compat-dev \
-        libncurses5-dev pkg-config python3.12-venv \
+        libncurses5-dev pkg-config \
         fish php ghostscript texlive-latex-base imagemagick locales && \
     sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \
