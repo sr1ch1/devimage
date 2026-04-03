@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-echo '-----------'
-ls
-
-cat startup.sh
-echo '-----------'
 # fetch users devmage repository
 GITHUB_USER=$(whoami)
 git clone https://github.com/$GITHUB_USER/devimage.git
@@ -23,7 +18,6 @@ while true; do
         exit 1
     fi
 
-    echo $PW
     # Test password (with 'ls')
     if printf '%s\n' "$PW" | keepassxc-cli ls bootstrap.kdbx dir >/dev/null 2>&1; then
         echo "Password OK"
@@ -74,7 +68,7 @@ mise use -g java@latest
 mise use -g julia@latest
 mise use -g dotnet@latest
 mise use -g php@8.4
-mise use -g github:composer/composer
+mise use -g composer@latest
 
 # install productivity tools
 mise use -g fzf@latest

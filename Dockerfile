@@ -20,31 +20,44 @@ RUN apt-get update && \
     wget gnupg gnupg-agent dirmngr \
     curl git unzip locales \
     openssh-client sqlite3 \
-    # --- Build-Essentials (for mise/php/treesitter) ---
+    # --- build essentials (for mise/php/treesitter) ---
     build-essential \
     cmake \
     autoconf \
     bison \
     re2c \
     pkg-config \
+    plocate \
     # --- PHP build dependencies (libraries) ---
     libxml2-dev \
     libssl-dev \
     libcurl4-openssl-dev \
-    libpng-dev \
+    libonig-dev \
     libzip-dev \
     zlib1g-dev \
+    libbz2-dev \
+    # --- PHP graphics (additions for full gd support) ---
+    libpng-dev \
+    libjpeg-dev \
+    libwebp-dev \
+    libavif-dev \
+    libfreetype6-dev \
+    libxpm-dev \
+    libgd-dev \
+    # --- PHP Databases ---
+    libsqlite3-dev \
+    libpq-dev \
+    # --- PHP Misc, I18n & Formats ---
     libreadline-dev \
     libffi-dev \
     libyaml-dev \
+    libicu-dev \
+    libgmp-dev \
+    libtidy-dev \
+    libxslt1-dev \
     libgdbm-dev \
     libgdbm-compat-dev \
     libncurses5-dev \
-    libonig-dev \
-    libsqlite3-dev \
-    libicu-dev \
-    libtidy-dev \
-    libxslt1-dev \
     # --- applications ---
     fish \
     ghostscript \
