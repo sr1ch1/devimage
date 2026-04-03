@@ -63,7 +63,7 @@ RUN apt-get update && \
     ghostscript \
     texlive-latex-base \
     imagemagick \
-    kitty-terminfo && \
+    kitty && \
     # --- locale setup ---
     sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \

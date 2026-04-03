@@ -75,16 +75,17 @@ mise use -g php@8.4
 mise use -g fzf@latest
 mise use -g ripgrep@latest
 mise use -g fd@latest
-mise use --global lazygit@latest
-mise use --global github:tree-sitter/tree-sitter
-mise use --global ast-grep@latest
-mise use --global github:tectonic-typesetting/tectonic
-mise use --global npm:@mermaid-js/mermaid-cli
-mise use --global npm:neovim
-mise use --global gem:neovim
-mise exec python@latest -- pip install pynvim
+mise use -g lazygit@latest
+mise use -g tree-sitter@latest
+mise use -g ast-grep@latest
+mise use -g github:tectonic-typesetting/tectonic
+mise use -g npm:@mermaid-js/mermaid-cli
 
 eval "$(mise activate bash)"
+mise use -g npm:neovim
+mise use -g gem:neovim
+mise exec python@latest -- pip install pynvim
+
 curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/bin --filename=composer
 mise reshim
 
