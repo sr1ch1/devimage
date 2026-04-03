@@ -6,33 +6,62 @@ FROM ubuntu:24.04
 ARG GITHUB_USER
 ENV GITHUB_USER="${GITHUB_USER}"
 
+ENV LANG=de_DE.UTF-8
+ENV LANGUAGE=de_DE:de
+ENV LC_ALL=de_DE.UTF-8
+
 # ---------------------------------------------------------
-# Install software globally
+# Install software packages globally
 # ---------------------------------------------------------
-# basic dev tools and the latest version of keepassxc
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    # --- base tools and system ---
     software-properties-common \
     wget gnupg gnupg-agent dirmngr \
-    curl git unzip build-essential cmake \
-    sqlite3 libsqlite3-dev kitty openssh-client \
-    libxml2-dev libssl-dev libcurl4-openssl-dev libpng-dev libzip-dev \
-    zlib1g-dev libreadline-dev libffi-dev \
-    libyaml-dev libgdbm-dev libgdbm-compat-dev \
-    libncurses5-dev pkg-config \
-    fish php ghostscript texlive-latex-base imagemagick locales && \
+    curl git unzip locales \
+    openssh-client sqlite3 \
+    # --- Build-Essentials (for mise/php/treesitter) ---
+    build-essential \
+    cmake \
+    autoconf \
+    bison \
+    re2c \
+    pkg-config \
+    # --- PHP build dependencies (libraries) ---
+    libxml2-dev \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libpng-dev \
+    libzip-dev \
+    zlib1g-dev \
+    libreadline-dev \
+    libffi-dev \
+    libyaml-dev \
+    libgdbm-dev \
+    libgdbm-compat-dev \
+    libncurses5-dev \
+    libonig-dev \
+    libsqlite3-dev \
+    libicu-dev \
+    libtidy-dev \
+    libxslt1-dev \
+    # --- applications ---
+    fish \
+    ghostscript \
+    texlive-latex-base \
+    imagemagick \
+    kitty-terminfo && \
+    # --- locale setup ---
     sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \
     update-locale LANG=de_DE.UTF-8 LANGUAGE=de_DE:de LC_ALL=de_DE.UTF-8 && \
+    # --- keepassxc ---
     add-apt-repository -y ppa:phoerious/keepassxc && \
     apt-get update && \
     apt-get install -y --no-install-recommends keepassxc && \
-    ln -s /usr/bin/fdfind /usr/local/bin/fd && \
+    # --- cleanup ---
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# set locale in environment
-ENV LANG=de_DE.UTF-8 LANGUAGE=de_DE:de LC_ALL=de_DE.UTF-8
 
 # Install Neovim (v0.11.7)
 RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-linux-x86_64.tar.gz \
