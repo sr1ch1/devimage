@@ -12,14 +12,15 @@ ENV GITHUB_USER="${GITHUB_USER}"
 # basic dev tools and the latest version of keepassxc
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        software-properties-common \
-        wget gnupg gnupg-agent dirmngr \
-        curl git unzip build-essential cmake \
-        sqlite3 libsqlite3-dev kitty openssh-client \
-        libssl-dev zlib1g-dev libreadline-dev libffi-dev \
-        libyaml-dev libgdbm-dev libgdbm-compat-dev \
-        libncurses5-dev pkg-config \
-        fish php ghostscript texlive-latex-base imagemagick locales && \
+    software-properties-common \
+    wget gnupg gnupg-agent dirmngr \
+    curl git unzip build-essential cmake \
+    sqlite3 libsqlite3-dev kitty openssh-client \
+    libxml2-dev libssl-dev libcurl4-openssl-dev libpng-dev libzip-dev \
+    zlib1g-dev libreadline-dev libffi-dev \
+    libyaml-dev libgdbm-dev libgdbm-compat-dev \
+    libncurses5-dev pkg-config \
+    fish php ghostscript texlive-latex-base imagemagick locales && \
     sed -i 's/^# *de_DE.UTF-8 UTF-8/de_DE.UTF-8 UTF-8/' /etc/locale.gen && \
     locale-gen de_DE.UTF-8 && \
     update-locale LANG=de_DE.UTF-8 LANGUAGE=de_DE:de LC_ALL=de_DE.UTF-8 && \
