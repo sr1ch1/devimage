@@ -19,7 +19,7 @@ while true; do
     fi
 
     # Test password (with 'ls')
-    if keepassxc-cli ls bootstrap.kdbx -p "$PW" >/dev/null 2>&1; then
+    if printf '%s\n' "$PW" | keepassxc-cli ls bootstrap.kdbx / >/dev/null 2>&1; then
         echo "Password OK"
         break
     else
@@ -30,8 +30,8 @@ done
 # ---------------------------------------------------------
 # Extract folders from keepass db
 # ---------------------------------------------------------
-DIRS=$(printf '%s\n' "$PW" \
-  | keepassxc-cli ls bootstrap.kdbx dir)
+  DIRS=$(printf '%s\n' "$PW" \
+    | keepassxc-cli ls bootstrap.kdbx dir)
 
 while IFS= read -r item; do
 
