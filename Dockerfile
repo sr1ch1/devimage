@@ -100,7 +100,7 @@ RUN echo "0 3 * * * root /usr/local/bin/sys-update.sh" > /etc/cron.d/update-cron
     chmod 0644 /etc/cron.d/update-cron
 
 # Install startup script
-COPY startup.sh /usr/local/bin/provision.sh
+COPY provision.sh /usr/local/bin/provision.sh
 
 # ---------------------------------------------------------
 # Create a non-root user for development
