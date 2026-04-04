@@ -91,17 +91,20 @@ fi
 
 # update attachment
 if [[ -f "$SOURCE_FILE" ]]; then
-  printf '%s\n' "$PW" | keepassxc-cli attachment-import "$DB" "$ENTRY" "$ATTACHMENT_NAME" "$SOURCE_FILE"
+    # 1. Try to remove the existing attachment first. 
+    # We pipe the password and ignore errors (in case it doesn't exist yet).
+    printf '%s\n' "$PW" | keepassxc-cli attachment-rm "$DB" "$ENTRY" "$ATTACHMENT_NAME" &> /dev/null
 
-  if [[ $? -eq 0 ]]; then
-    echo "Success: Attachment '$ATTACHMENT_NAME' updated in entry '$ENTRY'."
-  else
-    echo "Error: Failed to update attachment."
-    exit 1
-  fi
+    # 2. Perform the import
+    if printf '%s\n' "$PW" | keepassxc-cli attachment-import "$DB" "$ENTRY" "$ATTACHMENT_NAME" "$SOURCE_FILE"; then
+        echo "Success: Attachment '$ATTACHMENT_NAME' updated in entry '$ENTRY'."
+    else
+        echo "Error: Failed to update attachment."
+        exit 1
+    fi
 else
-  echo "Error: Source file '$SOURCE_FILE' not found."
-  exit 1
+    echo "Error: Source file '$SOURCE_FILE' not found."
+    exit 1
 fi
 
 # clean up
