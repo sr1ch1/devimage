@@ -18,7 +18,7 @@ RUN apt-get update && \
     # --- base tools and system ---
     software-properties-common \
     wget gnupg gnupg-agent dirmngr \
-    curl git unzip file locales \
+    curl git unzip file cron locales \
     openssh-client sqlite3 \
     # --- build essentials (for mise/php/treesitter) ---
     build-essential \
@@ -84,6 +84,21 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.5/nvim-lin
     && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
     && rm nvim-linux-x86_64.tar.gz
 
+# Create the system update script
+RUN <<EOF cat > /usr/local/bin/sys-update.sh
+#!/bin/bash
+apt-get update && apt-get upgrade -y
+echo "Auto update executed: \$(date)" >> /var/log/sys-update.log
+EOF
+
+# only root has write access to it
+RUN chown root:root /usr/local/bin/sys-update.sh && \
+    chmod 755 /usr/local/bin/sys-update.sh
+
+# install auto updates as cron job 
+RUN echo "0 3 * * * root /usr/local/bin/sys-update.sh" > /etc/cron.d/update-cron && \
+    chmod 0644 /etc/cron.d/update-cron
+
 # Install startup script
 COPY startup.sh /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/startup.sh
@@ -101,9 +116,26 @@ RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     mkdir -p "/home/$GITHUB_USER/projects" && \
     chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
 
-USER ${GITHUB_USER}
-WORKDIR /home/${GITHUB_USER}/projects
-ENV PATH="${HOME}/.local/bin:${PATH}"
+# setup fish configuration for the user (mise & zoxide)
+RUN <<EOF cat > /home/$GITHUB_USER/.config/fish/config.fish
+if status is-interactive
+    eval (mise activate fish)
+    eval (zoxide init fish)
+    set -g fish_greeting "" 
+end
+EOF
+
+# the init script
+RUN <<EOF cat > /usr/local/bin/bootstrap.sh
+#!/bin/bash
+service cron start
+su - "$GITHUB_USER" -c "/usr/local/bin/provision.sh"
+echo "System & User Setup done. Container is ready."
+exec tail -f /dev/null
+EOF
+
+RUN chmod 755 /usr/local/bin/bootstrap.sh /usr/local/bin/provision.sh && \
+    chown root:root /usr/local/bin/bootstrap.sh /usr/local/bin/provision.sh
 
 # Default command
-CMD [ "/usr/local/bin/startup.sh" ]
+CMD [ "/usr/local/bin/bootstrap.sh" ]
