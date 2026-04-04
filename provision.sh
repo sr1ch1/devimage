@@ -5,10 +5,12 @@ GITHUB_USER=$(whoami)
 git clone https://github.com/$GITHUB_USER/devimage.git
 cd devimage
 
+PW=="$1"
+
 # ---------------------------------------------------------
 # dehydrate user config
 # ---------------------------------------------------------
-. ./dehydrate.sh GITHUB_USER
+. ./dehydrate.sh GITHUB_USER PW
 
 # ---------------------------------------------------------
 # install and activate mise

@@ -5,7 +5,7 @@ ARCHIVE_NAME="home.tar.gz"
 RESTORE_TEMP="./home"
 
 # fetch password
-PW=$(./get_password.sh)
+PW=$1
 
 # Check if the script was aborted (exit code 1)
 if [[ $? -ne 0 ]]; then
