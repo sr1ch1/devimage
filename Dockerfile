@@ -116,6 +116,7 @@ RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
 
 # setup fish configuration for the user (mise & zoxide)
+RUN mkdir -p /home/${GITHUB_USER}/.config/fish
 RUN <<EOF cat > /home/$GITHUB_USER/.config/fish/config.fish
 if status is-interactive
     eval (mise activate fish)
