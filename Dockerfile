@@ -19,7 +19,7 @@ RUN apt-get update && \
     software-properties-common \
     wget gnupg gnupg-agent dirmngr \
     curl git unzip file cron locales \
-    openssh-client sqlite3 \
+    bsdutils openssh-client sqlite3 \
     # --- build essentials (for mise/php/treesitter) ---
     build-essential \
     cmake \
@@ -129,7 +129,7 @@ EOF
 RUN <<EOF cat > /usr/local/bin/bootstrap.sh
 #!/bin/bash
 service cron start
-su - "$GITHUB_USER" -c "/usr/local/bin/provision.sh"
+script -q -c "su - $GITHUB_USER -c /usr/local/bin/provision.sh" /dev/null
 echo "System & User Setup done. Container is ready."
 exec tail -f /dev/null
 EOF
