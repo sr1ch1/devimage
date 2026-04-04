@@ -28,6 +28,7 @@ RUN apt-get update && \
     re2c \
     pkg-config \
     plocate \
+    httpie \
     # --- PHP build dependencies (libraries) ---
     libxml2-dev \
     libssl-dev \
