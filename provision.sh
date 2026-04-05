@@ -2,22 +2,34 @@
 
 # fetch users devmage repository
 GITHUB_USER=$(whoami)
+
+echo "Found user: $GITHUB_USER"
+cd ~/projects
 git clone https://github.com/$GITHUB_USER/devimage.git
 cd devimage
-
-PW=="$1"
 
 # ---------------------------------------------------------
 # dehydrate user config
 # ---------------------------------------------------------
-. ./dehydrate.sh GITHUB_USER PW
+
+# source helper (runs in current shell and sets $PW)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${SCRIPT_DIR}/get_password.sh"
+rc=$?
+if [[ $rc -ne 0 ]]; then
+  echo "Password input failed (rc=$rc)" >&2
+  exit 1
+fi
+
+. ./dehydrate.sh "$PW"
+echo "$PWD"
 
 # ---------------------------------------------------------
 # install and activate mise
 # ---------------------------------------------------------
 curl -fsSL https://mise.run | sh
-echo 'eval "$(mise activate bash)"' >>~/.bashrc
 eval "$(mise activate bash)"
+echo 'eval "$(mise activate bash)"' >> ~/.bashrc
 mise install
 
 mise use -g neovim@0.11.5
@@ -45,7 +57,11 @@ mise use -g \
   zellij@latest \
   tree-sitter@latest \
   ast-grep@latest \
-  typst@latest
+  typst@latest \
+  bat@latest \
+  starship@latest
+
+echo 'eval "$(starship init bash)"' >>~/.bashrc
 
 # Handle the complex 'niche' installs last
 echo "Installing complex tools..."
@@ -72,6 +88,6 @@ rm -rf ~/.config/nvim/.git
 cp -af nvim/. ~/.config/nvim/
 
 # install plugins before the first start
-nvim --headless "+Lazy! sync" +MasonToolsInstallSync +qa
+nvim --headless "+Lazy! sync" +qa
 
 tail -f /dev/null

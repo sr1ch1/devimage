@@ -4,18 +4,15 @@
 ARCHIVE_NAME="home.tar.gz"
 RESTORE_TEMP="./home"
 
-# fetch password
-PW=$1
-
-# Check if the script was aborted (exit code 1)
-if [[ $? -ne 0 ]]; then
-  echo "Password entry failed."
-  exit 1
-fi
+echo "---------"
+echo "Password: $PW"
+echo "---------"
 
 # fetch user config from database
 printf '%s\n' "$PW" |
   keepassxc-cli attachment-export bootstrap.kdbx "user" "home.tar.gz" "home.tar.gz"
+
+unset PW
 
 # Check if the archive exists
 if [[ ! -f "$ARCHIVE_NAME" ]]; then

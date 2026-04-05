@@ -30,11 +30,11 @@ if $DOCKER_BIN ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
 
     # --- Check if container runs ---
     if $DOCKER_BIN ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-        $DOCKER_BIN exec -it "$CONTAINER_NAME" bash
+        $DOCKER_BIN exec -it -u "$GITHUB_USER" -w "/home/$GITHUB_USER/projects" "$CONTAINER_NAME" bash
         exit 0
     else
         $DOCKER_BIN start "$CONTAINER_NAME"
-        $DOCKER_BIN exec -it "$CONTAINER_NAME" bash
+        $DOCKER_BIN exec -it -u "$GITHUB_USER" -w "/home/$GITHUB_USER/projects" "$CONTAINER_NAME" bash
         exit 0
     fi
 else
