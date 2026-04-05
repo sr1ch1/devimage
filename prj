@@ -1,0 +1,46 @@
+#!/bin/bash
+
+PROJECTS_DIR="$HOME/projects"
+
+if [ -n "$1" ]; then
+  # Argument wurde übergeben
+  TARGET_DIR="$PROJECTS_DIR/$1"
+  if [ ! -d "$TARGET_DIR" ]; then
+    echo "Error - '$1' is not a valid project"
+    exit 1
+  fi
+  SESSION_NAME="$1"
+else
+  CURRENT_DIR=$(pwd)
+  if [[ "$CURRENT_DIR" != "$PROJECTS_DIR"* ]]; then
+    echo "Error - Not inside a project"
+    exit 1
+  fi
+
+  SESSION_NAME=$(echo "$CURRENT_DIR" | sed "s|^$PROJECTS_DIR/||" | cut -d'/' -f1)
+
+  if [ -z "$SESSION_NAME" ] || [ "$SESSION_NAME" == "$PROJECTS_DIR" ]; then
+    echo "Error - Could not find project"
+    exit 1
+  fi
+  TARGET_DIR="$PROJECTS_DIR/$SESSION_NAME"
+fi
+
+cd "$TARGET_DIR" || exit 1
+
+# remove ANSI-Escape-sequences for grep
+CLEAN_SESSIONS=$(zellij list-sessions | sed 's/\x1b\[[0-9;]*m//g')
+
+# check if session is active
+if echo "$CLEAN_SESSIONS" | grep -q "^$SESSION_NAME\b"; then
+  exec zellij attach "$SESSION_NAME"
+fi
+
+# check if dead session exists and remove if it does.
+if echo "$CLEAN_SESSIONS" | grep -q "^$SESSION_NAME "; then
+  zellij delete-session "$SESSION_NAME"
+fi
+
+# start new session
+(sleep 0.4 && zellij action rename-session "$SESSION_NAME") &
+exec zellij --layout project-tabs

@@ -43,6 +43,7 @@ mise use -g lua@5.1
 mise use -g rust@latest
 mise use -g ruby@latest
 mise use -g java@latest
+mise use -g groovy@latest
 mise use -g julia@latest
 mise use -g dotnet@latest
 mise use -g php@8.4
@@ -53,6 +54,8 @@ mise use -g \
   fzf@latest \
   ripgrep@latest \
   fd@latest \
+  jq@latest \
+  yq@latest \
   lazygit@latest \
   zoxide@latest \
   zellij@latest \
@@ -61,7 +64,16 @@ mise use -g \
   typst@latest \
   bat@latest \
   starship@latest \
-  eza@latest
+  eza@latest \
+  opencode@latest \
+  claude@latest \
+  helm@latest \
+  k9s@latest \
+  kubectl@latest \
+  kubeseal@latest \
+  pulumi@latest \
+  terraform@latest \
+  uv@latest
 
 echo 'eval "$(starship init bash)"' >>~/.bashrc
 
