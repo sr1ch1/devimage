@@ -2,3 +2,4 @@
 ~/.ssh
 ~/.config/mise/config.toml
 ~/.config/starship.toml
+~/.config/nushell/config.nu

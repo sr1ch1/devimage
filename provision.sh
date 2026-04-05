@@ -49,6 +49,7 @@ mise use -g php@8.4
 
 # Install productivity tools in one fast, parallel burst
 mise use -g \
+  aqua:nushell/nushell@latest \
   fzf@latest \
   ripgrep@latest \
   fd@latest \
@@ -78,6 +79,10 @@ mise exec python@latest -- pip install pynvim
 
 curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/bin --filename=composer
 mise reshim
+
+# nushell specific integrations
+mise activate nu >~/.config/mise/activate.nu
+starship init nu >~/.config/nushell/starship.nu
 
 # ---------------------------------------------------------
 # Install lazyvim
