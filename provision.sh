@@ -29,7 +29,7 @@ echo "$PWD"
 # ---------------------------------------------------------
 curl -fsSL https://mise.run | sh
 eval "$(mise activate bash)"
-echo 'eval "$(mise activate bash)"' >> ~/.bashrc
+echo 'eval "$(mise activate bash)"' >>~/.bashrc
 mise install
 
 mise use -g neovim@0.11.5
@@ -59,7 +59,8 @@ mise use -g \
   ast-grep@latest \
   typst@latest \
   bat@latest \
-  starship@latest
+  starship@latest \
+  eza@latest
 
 echo 'eval "$(starship init bash)"' >>~/.bashrc
 
