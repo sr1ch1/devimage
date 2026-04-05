@@ -92,8 +92,15 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.7/nvim-lin
 # ---------------------------------------------------------
 RUN <<EOF cat > /usr/local/bin/sys-update.sh
 #!/bin/bash
-apt-get update && apt-get dist-upgrade -y
-echo "Auto update executed: \$(date)" >> /var/log/sys-update.log
+if apt-get update && apt-get dist-upgrade -y; then
+    MSG="System auto-update success: \$(date)"
+    echo "\$MSG" >> /var/log/sys-update.log
+    echo "\$MSG" | wall 2>/dev/null || true
+else
+    MSG="ERROR in system auto-update: \$(date)"
+    echo "\$MSG" >> /var/log/sys-update.log
+    echo -e "\a\$MSG\nPlease check /var/log/sys-update.log" | wall 2>/dev/null || true
+fi
 truncate -s 50K /var/log/sys-update.log
 EOF
 
@@ -106,15 +113,40 @@ RUN chown root:root /usr/local/bin/sys-update.sh && \
 # ---------------------------------------------------------
 RUN <<EOF cat > /usr/local/bin/mise-auto-update.sh
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
+
+SELF_UPDATE_STATUS=0
+UPGRADE_STATUS=0
 
 # mise global update
-mise self-update || true
-mise upgrade --yes || true
+if mise self-update; then
+    echo "mise self-update success" >> /var/log/mise-update.log
+else
+    SELF_UPDATE_STATUS=1
+fi
 
-echo "mise auto-update executed: \$(date)" >> /var/log/mise-update.log
+# mise upgrade (all tools)
+if mise upgrade --yes; then
+    echo "mise upgrade success" >> /var/log/mise-update.log
+else
+    UPGRADE_STATUS=1
+fi
+
+TIMESTAMP=\$(date "+%Y-%m-%d %H:%M:%S")
+
+if [ \$SELF_UPDATE_STATUS -eq 0 ] && [ \$UPGRADE_STATUS -eq 0 ]; then
+    MSG="🚀 mise auto-update was successful: \$TIMESTAMP"
+    echo "\$MSG" >> /var/log/mise-update.log
+    echo "\$MSG" | wall 2>/dev/null || true
+else
+    MSG="mise update has warnings/errors: \$TIMESTAMP"
+    echo "\$MSG" >> /var/log/mise-update.log
+    echo -e "\a\$MSG\nPlease check /var/log/mise-update.log" | wall 2>/dev/null || true
+fi
+
 truncate -s 50K /var/log/mise-update.log
 EOF
+
 # only root has write access to it
 RUN chown root:root /usr/local/bin/mise-auto-update.sh && \
     chmod 755 /usr/local/bin/mise-auto-update.sh
