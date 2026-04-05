@@ -22,21 +22,24 @@ if [ -z "$1" ]; then
 fi
 
 GITHUB_USER="$1"
+HOST_DIR="$HOME/projects"
+CONTAINER_DIR="/home/$GITHUB_USER/projects"
 
-# --- Check if container exists ---
-# Note: 'container exists' is specific to Podman. 
-# Using 'ps -a' is compatible with both engines.
+# check if container exists in a portable way
 if $DOCKER_BIN ps -a --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
 
-    # --- Check if container runs ---
-    if $DOCKER_BIN ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-        $DOCKER_BIN exec -it -u "$GITHUB_USER" -w "/home/$GITHUB_USER/projects" "$CONTAINER_NAME" bash
-        exit 0
-    else
+    # check if container runs
+    if ! $DOCKER_BIN ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+        # Läuft nicht → starten
         $DOCKER_BIN start "$CONTAINER_NAME"
-        $DOCKER_BIN exec -it -u "$GITHUB_USER" -w "/home/$GITHUB_USER/projects" "$CONTAINER_NAME" bash
-        exit 0
     fi
+
+    # logon to the container
+    $DOCKER_BIN exec -it \
+        -u "$GITHUB_USER" \
+        -w "$CONTAINER_DIR" \
+        "$CONTAINER_NAME" bash
+    exit 0
 else
     echo "Using engine: $DOCKER_BIN"
     echo "Building image: '$IMAGE_NAME'..."
@@ -48,6 +51,7 @@ else
     $DOCKER_BIN run -it \
         --hostname "$CONTAINER_NAME" \
         --name "$CONTAINER_NAME" \
+        --volume "$HOST_DIR:$CONTAINER_DIR" \
         "$IMAGE_NAME"
     exit 0
 fi
