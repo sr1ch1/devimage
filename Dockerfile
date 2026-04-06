@@ -124,7 +124,7 @@ COPY utils/dehydrate.sh /usr/local/bin/dehydrate.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/provision.sh /usr/local/bin/get_password.sh /usr/local/bin/dehydrate.sh
 
 # Install dev scripts
-COPY utils/prj.sh /usr/local/bin/prj
+COPY utils/prj /usr/local/bin/prj
 RUN chmod +x /usr/local/bin/prj
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

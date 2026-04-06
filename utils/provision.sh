@@ -24,7 +24,7 @@ if [[ $rc -ne 0 ]]; then
   exit 1
 fi
 
-. ./dehydrate.sh "$PW"
+. "${SCRIPT_DIR}/dehydrate.sh" "$PW"
 echo "$PWD"
 
 # ---------------------------------------------------------

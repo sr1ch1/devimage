@@ -4,10 +4,6 @@
 ARCHIVE_NAME="home.tar.gz"
 RESTORE_TEMP="./home"
 
-echo "---------"
-echo "Password: $PW"
-echo "---------"
-
 # fetch user config from database
 printf '%s\n' "$PW" |
   keepassxc-cli attachment-export bootstrap.kdbx "user" "home.tar.gz" "home.tar.gz"
