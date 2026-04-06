@@ -88,77 +88,20 @@ RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.7/nvim-lin
     && rm nvim-linux-x86_64.tar.gz
 
 # ---------------------------------------------------------
-# Create the system update script
+# Install the system update job
 # ---------------------------------------------------------
-RUN <<EOF cat > /usr/local/bin/sys-update.sh
-#!/bin/bash
-if apt-get update && apt-get dist-upgrade -y; then
-    MSG="System auto-update success: \$(date)"
-    echo "\$MSG" >> /var/log/sys-update.log
-    echo "\$MSG" | wall 2>/dev/null || true
-else
-    MSG="ERROR in system auto-update: \$(date)"
-    echo "\$MSG" >> /var/log/sys-update.log
-    echo -e "\a\$MSG\nPlease check /var/log/sys-update.log" | wall 2>/dev/null || true
-fi
-truncate -s 50K /var/log/sys-update.log
-EOF
-
-# only root has write access to it
+COPY jobs/sys-update.sh /usr/local/bin/sys-update.sh
 RUN chown root:root /usr/local/bin/sys-update.sh && \
     chmod 755 /usr/local/bin/sys-update.sh
-
-# ---------------------------------------------------------
-# Create the user update script
-# ---------------------------------------------------------
-RUN <<EOF cat > /usr/local/bin/mise-auto-update.sh
-#!/bin/bash
-set -uo pipefail
-
-SELF_UPDATE_STATUS=0
-UPGRADE_STATUS=0
-
-# mise global update
-if mise self-update; then
-    echo "mise self-update success" >> /var/log/mise-update.log
-else
-    SELF_UPDATE_STATUS=1
-fi
-
-# mise upgrade (all tools)
-if mise upgrade --yes; then
-    echo "mise upgrade success" >> /var/log/mise-update.log
-else
-    UPGRADE_STATUS=1
-fi
-
-TIMESTAMP=\$(date "+%Y-%m-%d %H:%M:%S")
-
-if [ \$SELF_UPDATE_STATUS -eq 0 ] && [ \$UPGRADE_STATUS -eq 0 ]; then
-    MSG="🚀 mise auto-update was successful: \$TIMESTAMP"
-    echo "\$MSG" >> /var/log/mise-update.log
-    echo "\$MSG" | wall 2>/dev/null || true
-else
-    MSG="mise update has warnings/errors: \$TIMESTAMP"
-    echo "\$MSG" >> /var/log/mise-update.log
-    echo -e "\a\$MSG\nPlease check /var/log/mise-update.log" | wall 2>/dev/null || true
-fi
-
-truncate -s 50K /var/log/mise-update.log
-EOF
-
-# only root has write access to it
-RUN chown root:root /usr/local/bin/mise-auto-update.sh && \
-    chmod 755 /usr/local/bin/mise-auto-update.sh
-
-# ---------------------------------------------------------
-# Install cron jobs
-# ---------------------------------------------------------
-
-# install auto updates as cron job 
 RUN echo "0 3 * * * root /usr/local/bin/sys-update.sh" > /etc/cron.d/update-cron && \
     chmod 0644 /etc/cron.d/update-cron
 
+# ---------------------------------------------------------
+# Install the user update job
+# ---------------------------------------------------------
+COPY jobs/mise-auto-update.sh /usr/local/bin/mise-auto-update.sh
+RUN chown root:root /usr/local/bin/mise-auto-update.sh && \
+    chmod 755 /usr/local/bin/mise-auto-update.sh
 RUN echo "30 3 * * * ${GITHUB_USER} /usr/local/bin/mise-auto-update.sh" > /etc/cron.d/mise-update && \
     chmod 0644 /etc/cron.d/mise-update
 
@@ -174,11 +117,15 @@ RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
 
 # Install startup script
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY provision.sh /usr/local/bin/provision.sh
-COPY get_password.sh /usr/local/bin/get_password.sh
-COPY dehydrate.sh /usr/local/bin/dehydrate.sh
+COPY utils/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY utils/provision.sh /usr/local/bin/provision.sh
+COPY utils/get_password.sh /usr/local/bin/get_password.sh
+COPY utils/dehydrate.sh /usr/local/bin/dehydrate.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/provision.sh /usr/local/bin/get_password.sh /usr/local/bin/dehydrate.sh
+
+# Install dev scripts
+COPY utils/prj.sh /usr/local/bin/prj
+RUN chmod +x /usr/local/bin/prj
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD [ "/usr/local/bin/provision.sh" ]
