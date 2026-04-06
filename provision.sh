@@ -5,8 +5,11 @@ GITHUB_USER=$(whoami)
 
 echo "Found user: $GITHUB_USER"
 cd ~/projects
-git clone https://github.com/$GITHUB_USER/devimage.git
-cd devimage
+# clone repo if it does not exist
+if [ ! -d "devimage" ]; then
+    git clone "https://github.com/$GITHUB_USER/devimage.git"
+fi
+cd devimage 
 
 # ---------------------------------------------------------
 # dehydrate user config
@@ -66,14 +69,7 @@ mise use -g \
   starship@latest \
   eza@latest \
   opencode@latest \
-  claude@latest \
-  helm@latest \
-  k9s@latest \
-  kubectl@latest \
-  kubeseal@latest \
-  pulumi@latest \
-  terraform@latest \
-  uv@latest
+  claude@latest
 
 echo 'eval "$(starship init bash)"' >>~/.bashrc
 
