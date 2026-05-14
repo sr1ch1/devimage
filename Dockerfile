@@ -81,6 +81,18 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------
+# Install Docker
+# ---------------------------------------------------------
+RUN install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends docker-ce-cli docker-buildx-plugin docker-compose-plugin && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------
 # Install the system update job
 # ---------------------------------------------------------
 COPY jobs/sys-update.sh /usr/local/bin/sys-update.sh
@@ -113,7 +125,9 @@ ENV PATH=/home/${GITHUB_USER}/.local/bin:$PATH
 RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
     useradd -m -s /bin/bash "$GITHUB_USER" && \
     mkdir -p "/home/$GITHUB_USER/projects" && \
-    chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER"
+    chown -R "$GITHUB_USER:$GITHUB_USER" "/home/$GITHUB_USER" && \
+    groupadd -f docker && \
+    usermod -aG docker "$GITHUB_USER"
 
 # Install startup script
 COPY utils/entrypoint.sh /usr/local/bin/entrypoint.sh

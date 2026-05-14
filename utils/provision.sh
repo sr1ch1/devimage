@@ -106,9 +106,6 @@ npm install -g neovim@latest
 mise use -g gem:neovim
 mise exec python@latest -- pip install pynvim
 
-curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/bin --filename=composer
-mise reshim
-
 # nushell specific integrations
 mkdir -p ~/.config/mise ~/.config/nushell
 mise activate nu >~/.config/mise/activate.nu
@@ -125,3 +122,5 @@ cp -af nvim/. ~/.config/nvim/
 
 # install plugins before the first start
 nvim --headless "+Lazy! sync" +qa
+
+#curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/bin --filename=composer

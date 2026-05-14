@@ -51,6 +51,7 @@ else
         --hostname "$CONTAINER_NAME" \
         --name "$CONTAINER_NAME" \
         --volume "$HOST_DIR:$CONTAINER_DIR:z" \
+        -p 9119:9119 \
         "$IMAGE_NAME"
     exit 0
 fi

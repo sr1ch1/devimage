@@ -32,20 +32,19 @@ fi
 
 cd "$TARGET_DIR" || exit 1
 
-# remove ANSI-Escape-sequences
+# remove ANSI-Escape-sequences for grep
 CLEAN_SESSIONS=$(zellij list-sessions | sed 's/\x1b\[[0-9;]*m//g')
 
-# Get the line for this session (first field exact match, safe against regex chars)
-SESSION_LINE=$(printf '%s\n' "$CLEAN_SESSIONS" | awk -v s="$SESSION_NAME" '$1 == s {print; exit}')
+# check if session is active
+if echo "$CLEAN_SESSIONS" | grep -q "^$SESSION_NAME\b"; then
+  exec zellij attach "$SESSION_NAME"
+fi
 
-if [ -n "$SESSION_LINE" ]; then
-  # Check if session is dead/exited
-  if printf '%s\n' "$SESSION_LINE" | grep -Fq "[Exited]"; then
-    zellij delete-session "$SESSION_NAME"
-  else
-    exec zellij attach "$SESSION_NAME"
-  fi
+# check if dead session exists and remove if it does.
+if echo "$CLEAN_SESSIONS" | grep -q "^$SESSION_NAME "; then
+  zellij delete-session "$SESSION_NAME"
 fi
 
 # start new session
-exec zellij --session "$SESSION_NAME" --layout project-tabs
+(sleep 0.4 && zellij action rename-session "$SESSION_NAME") &
+exec zellij --layout project-tabs

@@ -1,5 +1,6 @@
 ~/.gitconfig
 ~/.ssh
+~/.hermes/config.yaml
 ~/.config/zellij
 ~/.config/mise/config.toml
 ~/.config/starship.toml
