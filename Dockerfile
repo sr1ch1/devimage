@@ -80,13 +80,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Neovim (v0.11.7)
-RUN curl -LO https://github.com/neovim/neovim/releases/download/v0.11.7/nvim-linux-x86_64.tar.gz \
-    && tar xzf nvim-linux-x86_64.tar.gz \
-    && mv nvim-linux-x86_64 /opt/nvim \
-    && ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim \
-    && rm nvim-linux-x86_64.tar.gz
-
 # ---------------------------------------------------------
 # Install the system update job
 # ---------------------------------------------------------
@@ -102,8 +95,14 @@ RUN echo "0 3 * * * root /usr/local/bin/sys-update.sh" > /etc/cron.d/update-cron
 COPY jobs/mise-auto-update.sh /usr/local/bin/mise-auto-update.sh
 RUN chown root:root /usr/local/bin/mise-auto-update.sh && \
     chmod 755 /usr/local/bin/mise-auto-update.sh
-RUN echo "30 3 * * * ${GITHUB_USER} /usr/local/bin/mise-auto-update.sh" > /etc/cron.d/mise-update && \
+RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
+    echo "30 3 * * * ${GITHUB_USER} /usr/local/bin/mise-auto-update.sh" > /etc/cron.d/mise-update && \
     chmod 0644 /etc/cron.d/mise-update
+
+# ---------------------------------------------------------
+# Install Playwright (as root)
+# ---------------------------------------------------------
+RUN npx playwright install --with-deps chromium
 
 # ---------------------------------------------------------
 # Create a non-root user for development
@@ -120,12 +119,15 @@ RUN test -n "$GITHUB_USER" || (echo "GITHUB_USER is empty!" && exit 1) && \
 COPY utils/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY utils/provision.sh /usr/local/bin/provision.sh
 COPY utils/get_password.sh /usr/local/bin/get_password.sh
-COPY utils/dehydrate.sh /usr/local/bin/dehydrate.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/provision.sh /usr/local/bin/get_password.sh /usr/local/bin/dehydrate.sh
+COPY utils/restore.sh /usr/local/bin/restore.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/provision.sh /usr/local/bin/get_password.sh /usr/local/bin/restore.sh
 
 # Install dev scripts
 COPY utils/prj /usr/local/bin/prj
 RUN chmod +x /usr/local/bin/prj
+
+HEALTHCHECK --interval=5m --timeout=3s --start-period=30s --retries=3 \
+  CMD pgrep cron >/dev/null && test -f /home/${GITHUB_USER}/.local/bin/mise || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD [ "/usr/local/bin/provision.sh" ]

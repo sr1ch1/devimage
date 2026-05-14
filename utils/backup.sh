@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 DB="bootstrap.kdbx"
 ENTRY="user"
@@ -14,13 +15,8 @@ else
 fi
 
 # fetch password
-PW=$(./get_password.sh)
-
-# Check if the script was aborted (exit code 1)
-if [[ $? -ne 0 ]]; then
-  echo "Password entry failed."
-  exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PW=$("${SCRIPT_DIR}/get_password.sh") || { echo "Password entry failed."; exit 1; }
 
 # Configuration
 FILELIST="filelist.txt"
@@ -47,22 +43,23 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   [[ -z "$line" ]] && continue
 
   # Check if the path starts with ~
-  if [[ "$line" == "~"* ]]; then
-    # Remove the "~/" prefix to get the relative path from $HOME
-    # Example: "~/docs/file.txt" becomes "docs/file.txt"
-    relative_path="${line#\~/}"
+  if [[ "$line" != "~"* ]]; then
+    echo "ERROR: All paths in filelist.txt must start with '~'. Invalid: $line" >&2
+    exit 1
+  fi
 
-    # Change directory to $HOME to make --parents relative to it
-    if [[ -e "$HOME/$relative_path" ]]; then
-      echo "Copying: $line"
+  # Remove the "~/" prefix to get the relative path from $HOME
+  # Example: "~/docs/file.txt" becomes "docs/file.txt"
+  relative_path="${line#\~/}"
 
-      # Execute copy from within $HOME to strip the /home/user prefix
-      (cd "$HOME" && cp -a --parents "$relative_path" "$CURRENT_PWD/$DEST_DIR/")
-    else
-      echo "Warning: Path does not exist: $HOME/$relative_path"
-    fi
+  # Change directory to $HOME to make --parents relative to it
+  if [[ -e "$HOME/$relative_path" ]]; then
+    echo "Copying: $line"
+
+    # Execute copy from within $HOME to strip the /home/user prefix
+    (cd "$HOME" && cp -a --parents "$relative_path" "$CURRENT_PWD/$DEST_DIR/")
   else
-    echo "Skipping (no ~ at start): $line"
+    echo "Warning: Path does not exist: $HOME/$relative_path"
   fi
 done <"$FILELIST"
 
@@ -75,7 +72,7 @@ else
   echo "Nothing found to archive."
 fi
 
-ENTRY_EXISTS=$(printf '%s\n' "$PW" | keepassxc-cli ls "$DB" | grep -x "$ENTRY")
+ENTRY_EXISTS=$(printf '%s\n' "$PW" | keepassxc-cli ls "$DB" -f | grep -Fx "$ENTRY")
 
 # create entry if needed ans set username
 if [[ -z "$ENTRY_EXISTS" ]]; then
@@ -83,8 +80,7 @@ if [[ -z "$ENTRY_EXISTS" ]]; then
   printf '%s\n' "$PW" | keepassxc-cli add "$DB" "$ENTRY" --username "$USERNAME"
 else
   echo "Entry '$ENTRY' exists. Updating username..."
-  printf '%s\n' "$PW" | keepassxc-cli edit "$DB" "$ENTRY" --username "$USERNAME"
-  if [[ $? -eq 0 ]]; then
+  if printf '%s\n' "$PW" | keepassxc-cli edit "$DB" "$ENTRY" --username "$USERNAME"; then
     echo "Username updated to: $USERNAME"
   fi
 fi
@@ -93,7 +89,7 @@ fi
 if [[ -f "$SOURCE_FILE" ]]; then
     # 1. Try to remove the existing attachment first. 
     # We pipe the password and ignore errors (in case it doesn't exist yet).
-    printf '%s\n' "$PW" | keepassxc-cli attachment-rm "$DB" "$ENTRY" "$ATTACHMENT_NAME" &> /dev/null
+    printf '%s\n' "$PW" | keepassxc-cli attachment-rm "$DB" "$ENTRY" "$ATTACHMENT_NAME" &> /dev/null || true
 
     # 2. Perform the import
     if printf '%s\n' "$PW" | keepassxc-cli attachment-import "$DB" "$ENTRY" "$ATTACHMENT_NAME" "$SOURCE_FILE"; then

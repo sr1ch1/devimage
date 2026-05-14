@@ -1,0 +1,9 @@
+.git/
+.gitignore
+*.kdbx
+home/
+home.tar.gz
+bootstrap.kdbx
+README.md
+issues.md
+*.log

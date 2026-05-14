@@ -1,5 +1,6 @@
 #!/bin/bash
-set -uo pipefail
+export PATH="/home/${GITHUB_USER}/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+set -euo pipefail
 
 SELF_UPDATE_STATUS=0
 UPGRADE_STATUS=0
@@ -18,17 +19,19 @@ else
     UPGRADE_STATUS=1
 fi
 
-TIMESTAMP=\$(date "+%Y-%m-%d %H:%M:%S")
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
-if [ \$SELF_UPDATE_STATUS -eq 0 ] && [ \$UPGRADE_STATUS -eq 0 ]; then
-    MSG="🚀 mise auto-update was successful: \$TIMESTAMP"
-    echo "\$MSG" >> /var/log/mise-update.log
-    echo "\$MSG" | wall 2>/dev/null || true
+if [ $SELF_UPDATE_STATUS -eq 0 ] && [ $UPGRADE_STATUS -eq 0 ]; then
+    MSG="🚀 mise auto-update was successful: $TIMESTAMP"
+    echo "$MSG" >> /var/log/mise-update.log
+    echo "$MSG" | wall 2>/dev/null || true
 else
-    MSG="mise update has warnings/errors: \$TIMESTAMP"
-    echo "\$MSG" >> /var/log/mise-update.log
-    echo -e "\a\$MSG\nPlease check /var/log/mise-update.log" | wall 2>/dev/null || true
+    MSG="mise update has warnings/errors: $TIMESTAMP"
+    echo "$MSG" >> /var/log/mise-update.log
+    echo -e "\a$MSG\nPlease check /var/log/mise-update.log" | wall 2>/dev/null || true
 fi
 
-truncate -s 50K /var/log/mise-update.log
+if [ -f /var/log/mise-update.log ] && [ "$(stat -c%s /var/log/mise-update.log 2>/dev/null || echo 0)" -gt 51200 ]; then
+    tail -c 50K /var/log/mise-update.log > /var/log/mise-update.log.tmp && mv /var/log/mise-update.log.tmp /var/log/mise-update.log
+fi
 

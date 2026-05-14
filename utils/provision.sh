@@ -1,30 +1,42 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# fetch users devmage repository
-GITHUB_USER=$(whoami)
+# fetch users devimage repository
+GITHUB_USER="${GITHUB_USER:-$(whoami)}"
 
 echo "Found user: $GITHUB_USER"
 cd ~/projects
 # clone repo if it does not exist
 if [ ! -d "devimage" ]; then
-    git clone "https://github.com/$GITHUB_USER/devimage.git"
+  if ! git clone "https://github.com/$GITHUB_USER/devimage.git"; then
+    echo "ERROR: Failed to clone https://github.com/$GITHUB_USER/devimage.git" >&2
+    echo "Please verify the GITHUB_USER is correct and the repository is public." >&2
+    exit 1
+  fi
 fi
-cd devimage 
-
-# ---------------------------------------------------------
-# dehydrate user config
-# ---------------------------------------------------------
-
-# source helper (runs in current shell and sets $PW)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "${SCRIPT_DIR}/get_password.sh"
-rc=$?
-if [[ $rc -ne 0 ]]; then
-  echo "Password input failed (rc=$rc)" >&2
+cd devimage || {
+  echo "Failed to cd into devimage directory"
   exit 1
-fi
+}
 
-. "${SCRIPT_DIR}/dehydrate.sh" "$PW"
+# ---------------------------------------------------------
+# restore user config
+# ---------------------------------------------------------
+
+if [[ ! -f "bootstrap.kdbx" ]]; then
+  echo "WARNING: bootstrap.kdbx not found. No personal configuration will be restored." >&2
+else
+  # source helper (runs in current shell and sets $PW)
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  . "${SCRIPT_DIR}/get_password.sh"
+  rc=$?
+  if [[ $rc -ne 0 ]]; then
+    echo "Password input failed (rc=$rc)" >&2
+    exit 1
+  fi
+
+  . "${SCRIPT_DIR}/restore.sh" "$PW"
+fi
 echo "$PWD"
 
 # ---------------------------------------------------------
@@ -32,10 +44,10 @@ echo "$PWD"
 # ---------------------------------------------------------
 curl -fsSL https://mise.run | sh
 eval "$(mise activate bash)"
-echo 'eval "$(mise activate bash)"' >>~/.bashrc
+if ! grep -q 'mise activate bash' ~/.bashrc 2>/dev/null; then
+  echo 'eval "$(mise activate bash)"' >>~/.bashrc
+fi
 mise install
-
-mise use -g neovim@0.11.5
 
 # install language and package managers serially (not stable otherwise)
 mise use -g go@latest
@@ -59,6 +71,7 @@ mise use -g \
   fd@latest \
   jq@latest \
   yq@latest \
+  rtk@latest \
   lazygit@latest \
   zoxide@latest \
   zellij@latest \
@@ -68,20 +81,28 @@ mise use -g \
   bat@latest \
   starship@latest \
   eza@latest \
+  nvim@latest \
   opencode@latest \
   claude@latest
 
-echo 'eval "$(starship init bash)"' >>~/.bashrc
+if ! grep -q 'starship init bash' ~/.bashrc 2>/dev/null; then
+  echo 'eval "$(starship init bash)"' >>~/.bashrc
+fi
+
+# install hermes-agent
+curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 
 # Handle the complex 'niche' installs last
 echo "Installing complex tools..."
 mise use -g github:tectonic-typesetting/tectonic
 mise use -g npm:@mermaid-js/mermaid-cli
 
-echo 'eval "$(zoxide init bash)"' >>~/.bashrc
+if ! grep -q 'zoxide init bash' ~/.bashrc 2>/dev/null; then
+  echo 'eval "$(zoxide init bash)"' >>~/.bashrc
+fi
 eval "$(mise activate bash)"
 
-npm install -g neovim
+npm install -g neovim@latest
 mise use -g gem:neovim
 mise exec python@latest -- pip install pynvim
 
@@ -89,6 +110,7 @@ curl -sS https://getcomposer.org/installer | php -- --install-dir=$HOME/.local/b
 mise reshim
 
 # nushell specific integrations
+mkdir -p ~/.config/mise ~/.config/nushell
 mise activate nu >~/.config/mise/activate.nu
 starship init nu >~/.config/nushell/starship.nu
 
@@ -103,5 +125,3 @@ cp -af nvim/. ~/.config/nvim/
 
 # install plugins before the first start
 nvim --headless "+Lazy! sync" +qa
-
-tail -f /dev/null

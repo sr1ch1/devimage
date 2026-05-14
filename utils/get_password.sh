@@ -26,7 +26,6 @@ while true; do
   if printf '%s\n' "${PW}" | keepassxc-cli ls bootstrap.kdbx dir >/dev/null 2>&1; then
     echo "Password OK" >&2
     if is_sourced; then
-      export PW
       return 0
     else
       printf '%s' "${PW}"

@@ -12,8 +12,11 @@ cleanup() {
 }
 trap cleanup SIGTERM SIGINT
 
-# call provisionibng script
+# call provisioning script
 PROV_CMD="${1:-/usr/local/bin/provision.sh}"
 
 echo "Starting provision as ${GITHUB_USER} via gosu" >&2
-exec gosu "$GITHUB_USER" bash -i -c "$PROV_CMD"
+gosu "$GITHUB_USER" bash -l -c "$PROV_CMD"
+
+echo "Provisioning complete. Waiting on cron..." >&2
+wait "$CRON_PID"

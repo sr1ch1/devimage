@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
-set -e
+set -euo pipefail
 
 CONTAINER_NAME="dev"
 IMAGE_NAME="dev"
@@ -16,12 +15,12 @@ else
 fi
 
 # --- check input ---
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     echo "Usage: $0 <GITHUB_USER>"
     exit 1
 fi
 
-GITHUB_USER="$1"
+GITHUB_USER="${1}"
 HOST_DIR="$HOME/projects"
 CONTAINER_DIR="/home/$GITHUB_USER/projects"
 
@@ -51,7 +50,7 @@ else
     $DOCKER_BIN run -it \
         --hostname "$CONTAINER_NAME" \
         --name "$CONTAINER_NAME" \
-        --volume "$HOST_DIR:$CONTAINER_DIR" \
+        --volume "$HOST_DIR:$CONTAINER_DIR:z" \
         "$IMAGE_NAME"
     exit 0
 fi

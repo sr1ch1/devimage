@@ -1,12 +1,20 @@
 #!/bin/bash
+set -euo pipefail
 
 # Configuration
 ARCHIVE_NAME="home.tar.gz"
 RESTORE_TEMP="./home"
 
+DB_FILE="bootstrap.kdbx"
+
+if [[ ! -f "$DB_FILE" ]]; then
+    echo "ERROR: bootstrap.kdbx not found at $DB_FILE" >&2
+    exit 1
+fi
+
 # fetch user config from database
 printf '%s\n' "$PW" |
-  keepassxc-cli attachment-export bootstrap.kdbx "user" "home.tar.gz" "home.tar.gz"
+  keepassxc-cli attachment-export "$DB_FILE" "user" "home.tar.gz" "home.tar.gz"
 
 unset PW
 
@@ -23,10 +31,7 @@ mkdir -p "$RESTORE_TEMP"
 # Extract the archive
 echo "Extracting $ARCHIVE_NAME..."
 # --strip-components=1 removes the top-level "home" directory created during archiving
-tar -xzf "$ARCHIVE_NAME" -C "$RESTORE_TEMP" --strip-components=1
-
-# Check if extraction was successful
-if [[ $? -eq 0 ]]; then
+if tar -xzf "$ARCHIVE_NAME" -C "$RESTORE_TEMP" --strip-components=1; then
   echo "Restoring files to $HOME..."
 
   # Copy all files and folders from the temp dir to the user's actual home
